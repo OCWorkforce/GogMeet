@@ -1,6 +1,6 @@
-appId: com.ccworkforce.gimeet
+appId: com.ccworkforce.googlemeet
 productName: Google Meet
-copyright: Copyright © 2024 CCWorkforce
+copyright: Copyright © 2026 CCWorkforce
 
 directories:
   output: dist

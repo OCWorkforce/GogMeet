@@ -27,12 +27,27 @@ export function setupTray(win: BrowserWindow): void {
   icon.setTemplateImage(true);
 
   tray = new Tray(icon);
-  tray.setToolTip('GiMeet');
+  tray.setToolTip('Google Meet');
+
+  // Configure native About panel
+  app.setAboutPanelOptions({
+    applicationName: 'Google Meet',
+    applicationVersion: app.getVersion(),
+    version: app.getVersion(),
+    credits: 'Developed by CCWorkforce',
+    copyright: `© ${new Date().getFullYear()} CCWorkforce`,
+    iconPath,
+  });
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show GiMeet',
+      label: 'Open Google Meet',
       click: () => showWindow(win),
+    },
+    { type: 'separator' },
+    {
+      label: 'About Google Meet',
+      click: () => app.showAboutPanel(),
     },
     { type: 'separator' },
     {
@@ -42,15 +57,12 @@ export function setupTray(win: BrowserWindow): void {
     },
   ]);
 
+  // Left-click → pop up context menu (native macOS tray style)
   tray.on('click', () => {
-    if (win.isVisible()) {
-      win.hide();
-      app.dock?.hide();
-    } else {
-      showWindow(win);
-    }
+    tray!.popUpContextMenu(contextMenu);
   });
 
+  // Right-click → same menu
   tray.on('right-click', () => {
     tray!.popUpContextMenu(contextMenu);
   });
