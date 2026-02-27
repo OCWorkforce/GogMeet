@@ -54,14 +54,16 @@ window.api.app.getVersion(); // → string
 
 ## KEY CLASSES
 
-| Class                | Use                         |
-| -------------------- | --------------------------- |
-| `.state-screen`      | Loading/empty/error states  |
-| `.meeting-item`      | Meeting list row            |
-| `.btn-join`          | Join button (accent color)  |
-| `.meeting-time.soon` | Orange "In X min"           |
-| `.meeting-time.now`  | Red "Starting now!"         |
-| `.hiding`            | Fade-out animation on close |
+| Class                | Use                                      |
+| -------------------- | ---------------------------------------- |
+| `.state-screen`      | Loading/empty/error states               |
+| `.meeting-item`      | Meeting list row                         |
+| `.meeting-meta`      | Flex wrapper for time + badge + cal name |
+| `.btn-join`          | Join button (accent color)               |
+| `.meeting-time.soon` | Orange "In X min"                        |
+| `.meeting-time.now`  | Red "Starting now!"                      |
+| `.badge-auto`        | Auto-open indicator (⚡ blue badge)         |
+| `.hiding`            | Fade-out animation on close              |
 
 ## SECURITY
 

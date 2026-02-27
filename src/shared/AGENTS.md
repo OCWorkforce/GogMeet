@@ -28,7 +28,7 @@ export const IPC_CHANNELS = {
 ### MeetingEvent
 
 ```typescript
-// types.ts:15-25
+// types.ts:15-26
 export interface MeetingEvent {
   id: string;
   title: string;
@@ -39,6 +39,7 @@ export interface MeetingEvent {
   location?: string;
   notes?: string;
   isAllDay: boolean;
+  userEmail?: string; // Extracted from EKParticipant (self attendee)
 }
 ```
 
