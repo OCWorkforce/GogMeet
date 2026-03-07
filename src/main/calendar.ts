@@ -1,11 +1,13 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { access, mkdir } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+
 import { constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { MeetingEvent, CalendarPermission } from '../shared/types.js';
+import type { MeetingEvent, CalendarPermission, CalendarResult } from '../shared/types.js';
 
 const execFileAsync = promisify(execFile);
 const __dirname = join(fileURLToPath(import.meta.url), '..');
@@ -17,18 +19,17 @@ const SWIFT_SRC_DEV = join(__dirname, '..', '..', 'src', 'main', 'gimeet-events.
 const BINARY_DIR = join(tmpdir(), 'gimeet');
 const BINARY_PATH = join(BINARY_DIR, 'gimeet-events');
 
+/** Sidecar file storing the SHA-256 hash of the Swift source used for the current binary */
+const HASH_PATH = join(BINARY_DIR, 'source.hash');
+
+async function computeSwiftSourceHash(swiftSrc: string): Promise<string> {
+  const content = await readFile(swiftSrc);
+  return createHash('sha256').update(content).digest('hex');
+}
+
+
 /** Compile the Swift EventKit helper if not already compiled */
 async function ensureBinary(): Promise<void> {
-  // Check if binary already exists
-  try {
-    await access(BINARY_PATH, constants.X_OK);
-    return; // already compiled
-  } catch {
-    // need to compile
-  }
-
-  await mkdir(BINARY_DIR, { recursive: true });
-
   // Locate Swift source (dev: from src/, packaged: from Resources/app/src/main/)
   let swiftSrc = SWIFT_SRC_DEV;
   try {
@@ -43,7 +44,26 @@ async function ensureBinary(): Promise<void> {
     );
   }
 
-  // Try compile (without explicit SDK first, fallback to Xcode SDK)
+  await mkdir(BINARY_DIR, { recursive: true });
+
+  // Compute hash of current Swift source
+  const currentHash = await computeSwiftSourceHash(swiftSrc);
+
+  // Check if binary exists AND hash matches
+  try {
+    await access(BINARY_PATH, constants.X_OK);
+    const storedHash = await readFile(HASH_PATH, 'utf-8').catch(() => '');
+    if (storedHash.trim() === currentHash) {
+      return; // binary is up-to-date
+    }
+    // Hash changed — delete stale binary and recompile
+    console.log('[calendar] Swift source changed — recompiling binary');
+    await unlink(BINARY_PATH).catch(() => {});
+  } catch {
+    // Binary doesn't exist — need to compile
+  }
+
+  // Compile
   try {
     await execFileAsync('swiftc', [swiftSrc, '-o', BINARY_PATH], { timeout: 60_000 });
   } catch {
@@ -59,6 +79,9 @@ async function ensureBinary(): Promise<void> {
       { timeout: 60_000 }
     );
   }
+
+  // Store hash for future comparisons
+  await writeFile(HASH_PATH, currentHash, 'utf-8');
 }
 
 /** Run the compiled Swift EventKit helper and return raw output */
@@ -69,7 +92,7 @@ async function runSwiftHelper(): Promise<string> {
 }
 
 /** Parse pipe-delimited output from Swift helper into MeetingEvent[] */
-function parseEvents(raw: string): MeetingEvent[] {
+export function parseEvents(raw: string): MeetingEvent[] {
   if (!raw) return [];
 
   const todayMidnight = new Date();
@@ -84,7 +107,7 @@ function parseEvents(raw: string): MeetingEvent[] {
     .map((line) => line.trim())
     .filter(Boolean)
     .flatMap((line): MeetingEvent[] => {
-      const parts = line.split('||');
+      const parts = line.split('\t');
       if (parts.length < 7) return [];
 
       const [id, title, startStr, endStr, urlField, calendarName, allDayStr, emailField] = parts as [
@@ -121,16 +144,18 @@ function parseEvents(raw: string): MeetingEvent[] {
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 }
 
-/** Fetch Google Meet events via EventKit Swift helper */
-export async function getCalendarEvents(): Promise<MeetingEvent[]> {
+/** Fetch Google Meet events — returns structured result with events or error */
+export async function getCalendarEventsResult(): Promise<CalendarResult> {
   try {
     const output = await runSwiftHelper();
-    return parseEvents(output);
+    return { events: parseEvents(output) };
   } catch (err) {
-    console.error('[calendar] getCalendarEvents error:', err);
-    return [];
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[calendar] getCalendarEventsResult error:', err);
+    return { error: message };
   }
 }
+
 
 /** Run an inline AppleScript for permission checks (fast, no event queries) */
 async function runAppleScript(script: string): Promise<string> {

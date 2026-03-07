@@ -13,6 +13,7 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 let state: AppState = { type: 'loading' };
 let version = '';
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let lastUpdatedAt: number | null = null;
 
 function formatRelativeTime(isoDate: string): { label: string; cls: string } {
   const now = Date.now();
@@ -39,19 +40,26 @@ function formatRelativeTime(isoDate: string): { label: string; cls: string } {
   return { label: `${hours}:${minutes}`, cls: '' };
 }
 
-function renderHeader(): string {
-  return `
-    <div class="header">
-    </div>
-  `;
+function formatLastUpdated(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Updated just now';
+  if (diffMin === 1) return 'Updated 1 min ago';
+  return `Updated ${diffMin} min ago`;
 }
 
 function renderFooter(): string {
+  const isLoading = lastUpdatedAt === null;
+  const label = isLoading ? 'Loading…' : formatLastUpdated(lastUpdatedAt!);
+  const icon = isLoading ? '' : '<span class="footer-refresh-icon" aria-hidden="true">↻</span>';
   return `
-    <div class="footer">
+    <footer class="footer">
       <span class="footer-version">v${version}</span>
-      <button class="footer-refresh" id="footer-refresh">Last updated just now</button>
-    </div>
+      <span class="footer-sep" aria-hidden="true"></span>
+      <button class="footer-refresh${isLoading ? ' footer-refresh--loading' : ''}" data-action="refresh" aria-label="Refresh meetings">
+        ${icon}<span class="footer-refresh-label">${label}</span>
+      </button>
+    </footer>
   `;
 }
 
@@ -71,7 +79,7 @@ function renderBody(s: AppState): string {
           <div class="state-icon">📅</div>
           <p class="state-title">Calendar Access Needed</p>
           <p class="state-desc">GiMeet needs access to your calendar to show upcoming events.</p>
-          <button class="btn-primary" id="btn-grant" ${s.retrying ? 'disabled' : ''}>
+          <button class="btn-primary" id="btn-grant" data-action="grant-access" ${s.retrying ? 'disabled' : ''}>
             ${s.retrying ? 'Requesting...' : 'Grant Access'}
           </button>
         </div>
@@ -92,7 +100,7 @@ function renderBody(s: AppState): string {
           <div class="state-icon">⚠️</div>
           <p class="state-title">Something went wrong</p>
           <p class="state-desc">${escapeHtml(s.message)}</p>
-          <button class="btn-primary" id="btn-retry">Try Again</button>
+          <button class="btn-primary" id="btn-retry" data-action="retry">Try Again</button>
         </div>
       `;
 
@@ -116,7 +124,7 @@ function renderBody(s: AppState): string {
             <div class="meeting-item">
               <div class="meeting-item-row">
                 <span class="meeting-title" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</span>
-                ${event.meetUrl ? `<button class="btn-join" data-url="${escapeHtml(event.meetUrl)}">Join</button>` : ''}
+                ${event.meetUrl ? `<button class="btn-join" data-action="join-meeting" data-url="${escapeHtml(event.meetUrl)}">Join</button>` : ''}
               </div>
               <div class="meeting-item-row">
                 <span class="meeting-time ${rel.cls}">${rel.label}</span>
@@ -158,22 +166,41 @@ function render() {
   const app = document.getElementById('app');
   if (!app) return;
 
-  app.innerHTML = renderHeader() + `<div class="body">${renderBody(state)}</div>` + renderFooter();
-  bindEvents();
+  app.innerHTML = `<div class="body">${renderBody(state)}</div>` + renderFooter();
+
+  // Measure actual rendered height and resize the Electron BrowserWindow
+  const FOOTER_H = 32;
+  const MIN_H = 220;
+  const MAX_H = 480;
+  const bodyEl = app.querySelector<HTMLElement>('.body');
+  const bodyH = bodyEl ? bodyEl.scrollHeight : 0;
+  const targetH = Math.min(MAX_H, Math.max(MIN_H, bodyH + FOOTER_H));
+  window.api.window.setHeight(targetH);
 }
 
-function bindEvents() {
+function setupDelegatedEvents(): void {
+  const container = document.getElementById('app');
+  if (!container) return;
 
-  document.getElementById('footer-refresh')?.addEventListener('click', () => loadEvents());
+  container.addEventListener('click', (e: MouseEvent) => {
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (!target) return;
 
-  document.getElementById('btn-grant')?.addEventListener('click', () => grantAccess());
-  document.getElementById('btn-retry')?.addEventListener('click', () => loadEvents());
-
-  document.querySelectorAll<HTMLButtonElement>('.btn-join').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const url = btn.dataset['url'];
-      if (url) window.api.app.openExternal(url);
-    });
+    const action = target.dataset['action'];
+    switch (action) {
+      case 'refresh':
+      case 'retry':
+        void loadEvents();
+        break;
+      case 'grant-access':
+        void grantAccess();
+        break;
+      case 'join-meeting': {
+        const url = target.dataset['url'];
+        if (url) window.api.app.openExternal(url);
+        break;
+      }
+    }
   });
 }
 
@@ -203,12 +230,14 @@ async function loadEvents() {
       return;
     }
 
-    const events = await window.api.calendar.getEvents();
+    const result = await window.api.calendar.getEvents();
 
-    if (events.length === 0) {
+    if ('error' in result) {
+      state = { type: 'error', message: result.error };
+    } else if (result.events.length === 0) {
       state = { type: 'no-events' };
     } else {
-      state = { type: 'has-events', events };
+      state = { type: 'has-events', events: result.events };
     }
   } catch (err) {
     state = {
@@ -217,10 +246,12 @@ async function loadEvents() {
     };
   }
 
+  lastUpdatedAt = Date.now();
   render();
 }
 
 async function init() {
+  setupDelegatedEvents();
   version = await window.api.app.getVersion();
 
   // Initial load
@@ -229,6 +260,21 @@ async function init() {
   // Auto-refresh every 5 minutes
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(() => loadEvents(), REFRESH_INTERVAL_MS);
+
+  // Pause refresh when window hidden, resume when visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
+    } else {
+      // Resumed — reload immediately then restart interval
+      void loadEvents();
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => loadEvents(), REFRESH_INTERVAL_MS);
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => init());

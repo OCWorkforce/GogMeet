@@ -57,15 +57,46 @@ export function setupTray(win: BrowserWindow): void {
     },
   ]);
 
-  // Left-click → pop up context menu (native macOS tray style)
+  // Left-click → toggle window (show/hide)
   tray.on('click', () => {
-    tray!.popUpContextMenu(contextMenu);
+    if (win.isVisible()) {
+      win.hide();
+      app.dock?.hide();
+    } else {
+      showWindow(win);
+    }
   });
 
-  // Right-click → same menu
+  // Right-click → context menu
   tray.on('right-click', () => {
     tray!.popUpContextMenu(contextMenu);
   });
+}
+
+/** Max characters to show for the event title portion of the tray label */
+const TRAY_TITLE_MAX_CHARS = 12;
+
+/**
+ * Update the tray status bar title next to the icon.
+ * Pass null or empty string to clear.
+ * Pass minsRemaining to append " in X mins" / " in 1 min" countdown suffix.
+ */
+export function updateTrayTitle(title: string | null, minsRemaining?: number): void {
+  if (!tray) return;
+  if (!title) {
+    tray.setTitle('');
+    return;
+  }
+  const truncated =
+    title.length > TRAY_TITLE_MAX_CHARS
+      ? title.slice(0, TRAY_TITLE_MAX_CHARS) + '\u2026'
+      : title;
+  if (minsRemaining !== undefined && minsRemaining > 0) {
+    const suffix = minsRemaining === 1 ? ' in 1 min' : ` in ${minsRemaining} mins`;
+    tray.setTitle(truncated + suffix);
+  } else {
+    tray.setTitle(truncated);
+  }
 }
 
 function showWindow(win: BrowserWindow): void {

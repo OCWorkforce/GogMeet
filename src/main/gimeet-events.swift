@@ -19,8 +19,11 @@ store.requestFullAccessToEvents { granted, _ in
   let cal = Calendar.current
   var startComps = cal.dateComponents([.year, .month, .day], from: Date())
   startComps.hour = 0; startComps.minute = 0; startComps.second = 0
-  let startDate = cal.date(from: startComps)!
-  let endDate = cal.date(byAdding: .day, value: 2, to: startDate)!
+  guard let startDate = cal.date(from: startComps),
+        let endDate = cal.date(byAdding: .day, value: 2, to: startDate) else {
+    fputs("error: could not compute date range\n", stderr)
+    exit(1)
+  }
 
   let pred = store.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
   let events = store.events(matching: pred)
@@ -38,9 +41,16 @@ store.requestFullAccessToEvents { granted, _ in
   }
 
   for event in events {
-    let url = findMeetUrl(event.location) ?? findMeetUrl(event.notes) ?? ""
+    if event.status == .canceled { continue }
+    // Skip events the user has declined
+    if let attendees = event.attendees,
+       let self_ = attendees.first(where: { $0.isCurrentUser }),
+       self_.participantStatus == .declined {
+      continue
+    }
+    let url = findMeetUrl(event.url?.absoluteString) ?? findMeetUrl(event.location) ?? findMeetUrl(event.notes) ?? ""
 
-    let uid = event.eventIdentifier ?? ""
+    let uid = event.calendarItemIdentifier
     let title = event.title ?? ""
     let start = isoFormatter.string(from: event.startDate)
     let end = isoFormatter.string(from: event.endDate)
@@ -61,7 +71,7 @@ store.requestFullAccessToEvents { granted, _ in
       }
     }
 
-    print("\(uid)||\(title)||\(start)||\(end)||\(url)||\(calName)||\(allDay)||\(userEmail)")
+    print("\(uid)\t\(title)\t\(start)\t\(end)\t\(url)\t\(calName)\t\(allDay)\t\(userEmail)")
   }
 
   sema.signal()
