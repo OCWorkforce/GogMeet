@@ -20,6 +20,8 @@
     "package": "bun run build && electron-builder --mac --arm64",
     "package:dir": "bun run build && electron-builder --mac --arm64 --dir",
     "typecheck": "tsc -b",
+    "test": "vitest run -c vitest.workspace.ts",
+    "test:watch": "vitest -c vitest.workspace.ts",
     "clean": "rimraf lib dist"
   },
   "devDependencies": {
@@ -33,6 +35,7 @@
     "@types/throttle-debounce": "^5.0.2",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
+    "@vitest/browser": "^4.0.18",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "electron": "^40.8.0",

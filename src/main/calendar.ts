@@ -69,7 +69,7 @@ async function runSwiftHelper(): Promise<string> {
 }
 
 /** Parse pipe-delimited output from Swift helper into MeetingEvent[] */
-function parseEvents(raw: string): MeetingEvent[] {
+export function parseEvents(raw: string): MeetingEvent[] {
   if (!raw) return [];
 
   const todayMidnight = new Date();
