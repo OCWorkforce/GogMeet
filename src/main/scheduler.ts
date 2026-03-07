@@ -14,6 +14,9 @@ const MAX_SCHEDULE_AHEAD_MS = 24 * 60 * 60 * 1000; // 24 hours
 /** Map of eventId → active timer handle */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
+/** Map of eventId → the startMs that was used when the timer was scheduled */
+const scheduledStartMs = new Map<string, number>();
+
 /** Set of eventIds that have already fired (prevents re-fire on refresh) */
 const firedEvents = new Set<string>();
 
@@ -40,7 +43,7 @@ function buildMeetUrl(event: MeetingEvent): string {
  * Schedule or re-schedule browser-open timers for the given events.
  * Safe to call multiple times — clears stale timers for removed events.
  */
-function scheduleEvents(events: MeetingEvent[]): void {
+export function scheduleEvents(events: MeetingEvent[]): void {
   const now = Date.now();
   const activeIds = new Set<string>();
 
@@ -60,13 +63,24 @@ function scheduleEvents(events: MeetingEvent[]): void {
     // Already fired — skip
     if (firedEvents.has(event.id)) continue;
 
-    // Already scheduled — skip (timer still valid)
-    if (timers.has(event.id)) continue;
+    // Already scheduled — check if start time changed (reschedule needed)
+    if (timers.has(event.id)) {
+      const prevStartMs = scheduledStartMs.get(event.id);
+      if (prevStartMs === startMs) continue; // same time, timer still valid
+      // Start time changed — cancel old timer and reschedule
+      clearTimeout(timers.get(event.id)!);
+      timers.delete(event.id);
+      scheduledStartMs.delete(event.id);
+      firedEvents.delete(event.id); // allow re-fire at new time
+      console.log(`[scheduler] Rescheduled "${event.title}" — start time changed`);
+      // fall through to schedule new timer
+    }
 
     const effectiveDelay = Math.max(0, delayMs);
 
     const handle = setTimeout(() => {
       timers.delete(event.id);
+      scheduledStartMs.delete(event.id);
       firedEvents.add(event.id);
       if (!event.meetUrl) return; // no URL — nothing to open
       const url = buildMeetUrl(event);
@@ -77,6 +91,7 @@ function scheduleEvents(events: MeetingEvent[]): void {
     }, effectiveDelay);
 
     timers.set(event.id, handle);
+    scheduledStartMs.set(event.id, startMs);
     console.log(
       `[scheduler] Scheduled "${event.title}" to open in ${Math.round(effectiveDelay / 1000)}s`,
     );
@@ -88,6 +103,13 @@ function scheduleEvents(events: MeetingEvent[]): void {
       clearTimeout(handle);
       timers.delete(id);
       console.log(`[scheduler] Cancelled timer for removed event ${id}`);
+    }
+  }
+
+  // Prune firedEvents for events no longer in the active list
+  for (const id of firedEvents) {
+    if (!activeIds.has(id)) {
+      firedEvents.delete(id);
     }
   }
 }
@@ -125,6 +147,11 @@ export function stopScheduler(): void {
     clearTimeout(handle);
   }
   timers.clear();
+  scheduledStartMs.clear();
+  firedEvents.clear();
 
   console.log("[scheduler] Stopped");
 }
+
+// Export for testing
+export { firedEvents, scheduledStartMs, timers };
