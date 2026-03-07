@@ -61,7 +61,7 @@ store.requestFullAccessToEvents { granted, _ in
       }
     }
 
-    print("\(uid)||\(title)||\(start)||\(end)||\(url)||\(calName)||\(allDay)||\(userEmail)")
+    print("\(uid)\t\(title)\t\(start)\t\(end)\t\(url)\t\(calName)\t\(allDay)\t\(userEmail)")
   }
 
   sema.signal()

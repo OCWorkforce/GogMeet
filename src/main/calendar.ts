@@ -84,7 +84,7 @@ export function parseEvents(raw: string): MeetingEvent[] {
     .map((line) => line.trim())
     .filter(Boolean)
     .flatMap((line): MeetingEvent[] => {
-      const parts = line.split('||');
+      const parts = line.split('\t');
       if (parts.length < 7) return [];
 
       const [id, title, startStr, endStr, urlField, calendarName, allDayStr, emailField] = parts as [
