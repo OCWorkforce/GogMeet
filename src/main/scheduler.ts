@@ -1,4 +1,4 @@
-import { shell } from "electron";
+import { Notification, shell } from "electron";
 import { getCalendarEvents } from "./calendar.js";
 import type { MeetingEvent } from "../shared/types.js";
 
@@ -83,6 +83,10 @@ export function scheduleEvents(events: MeetingEvent[]): void {
       scheduledStartMs.delete(event.id);
       firedEvents.add(event.id);
       if (!event.meetUrl) return; // no URL — nothing to open
+      new Notification({
+        title: 'Meeting Starting',
+        body: event.title,
+      }).show();
       const url = buildMeetUrl(event);
       shell.openExternal(url).catch((err) => {
         console.error(`[scheduler] Failed to open ${url}:`, err);
