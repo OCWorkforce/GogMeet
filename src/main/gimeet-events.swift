@@ -42,7 +42,7 @@ store.requestFullAccessToEvents { granted, _ in
 
   for event in events {
     if event.status == .canceled { continue }
-    let url = findMeetUrl(event.location) ?? findMeetUrl(event.notes) ?? ""
+    let url = findMeetUrl(event.url?.absoluteString) ?? findMeetUrl(event.location) ?? findMeetUrl(event.notes) ?? ""
 
     let uid = event.eventIdentifier ?? ""
     let title = event.title ?? ""
