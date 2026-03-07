@@ -9,6 +9,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = !app.isPackaged;
 
+// Must be called before app.whenReady() on macOS for iconPath to take effect
+app.setAboutPanelOptions({
+  applicationName: 'Google Meet',
+  applicationVersion: app.getVersion(),
+  version: app.getVersion(),
+  credits: 'Developed by CCWorkforce Engineers',
+  copyright: `© ${new Date().getFullYear()} CCWorkforce`,
+  iconPath: path.join(__dirname, '..', '..', 'assets', 'google-meet-icon.png'),
+});
+
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): BrowserWindow {

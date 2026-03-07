@@ -1,7 +1,7 @@
 {
   "name": "googlemeet",
   "productName": "Google Meet Reminder",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Google Meet Reminder is a desktop application that helps you keep track of your Google Meet meetings and reminds you before they start.",
   "private": true,
   "repository": "https://github.com/CCWorkforce/Google Meet",
