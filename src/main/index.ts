@@ -94,7 +94,6 @@ app.on("before-quit", () => {
   // Allow quit from tray menu
   stopScheduler();
   if (mainWindow) {
-    mainWindow.removeListener("close", () => {});
     mainWindow.destroy();
   }
 });
