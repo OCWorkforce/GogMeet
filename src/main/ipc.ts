@@ -1,6 +1,6 @@
 import { ipcMain, shell, app, BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import { IPC_CHANNELS } from '../shared/types.js';
-import { getCalendarEvents, requestCalendarPermission, getCalendarPermissionStatus } from './calendar.js';
+import { getCalendarEventsResult, requestCalendarPermission, getCalendarPermissionStatus } from './calendar.js';
 
 /** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 const ALLOWED_ORIGINS = new Set(['http://localhost:5173', 'http://127.0.0.1:5173']);
@@ -31,8 +31,8 @@ function isAllowedMeetUrl(url: string): boolean {
 export function registerIpcHandlers(win: BrowserWindow): void {
   // Calendar
   ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (event) => {
-    if (!validateSender(event)) return [];
-    return getCalendarEvents();
+    if (!validateSender(event)) return { error: 'unauthorized' };
+    return getCalendarEventsResult();
   });
 
   ipcMain.handle(IPC_CHANNELS.CALENDAR_REQUEST_PERMISSION, async (event) => {

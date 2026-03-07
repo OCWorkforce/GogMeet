@@ -1,5 +1,5 @@
 import { Notification, shell } from "electron";
-import { getCalendarEvents } from "./calendar.js";
+import { getCalendarEventsResult } from "./calendar.js";
 import type { MeetingEvent } from "../shared/types.js";
 
 /** How long before meeting start to open the browser (ms) */
@@ -121,10 +121,14 @@ export function scheduleEvents(events: MeetingEvent[]): void {
 /** Poll calendar and refresh timers */
 async function poll(): Promise<void> {
   try {
-    const events = await getCalendarEvents();
-    scheduleEvents(events);
+    const result = await getCalendarEventsResult();
+    if ('events' in result) {
+      scheduleEvents(result.events);
+    } else {
+      console.error('[scheduler] Calendar error:', result.error);
+    }
   } catch (err) {
-    console.error("[scheduler] Poll error:", err);
+    console.error('[scheduler] Poll error:', err);
   }
 }
 

@@ -1,10 +1,10 @@
-import type { MeetingEvent, CalendarPermission } from '../shared/types.js';
+import type { CalendarPermission, CalendarResult } from '../shared/types.js';
 
 declare global {
   interface Window {
     api: {
       calendar: {
-        getEvents(): Promise<MeetingEvent[]>;
+        getEvents(): Promise<CalendarResult>;
         requestPermission(): Promise<CalendarPermission>;
         getPermissionStatus(): Promise<CalendarPermission>;
       };

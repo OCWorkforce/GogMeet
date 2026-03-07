@@ -221,12 +221,14 @@ async function loadEvents() {
       return;
     }
 
-    const events = await window.api.calendar.getEvents();
+    const result = await window.api.calendar.getEvents();
 
-    if (events.length === 0) {
+    if ('error' in result) {
+      state = { type: 'error', message: result.error };
+    } else if (result.events.length === 0) {
       state = { type: 'no-events' };
     } else {
-      state = { type: 'has-events', events };
+      state = { type: 'has-events', events: result.events };
     }
   } catch (err) {
     state = {

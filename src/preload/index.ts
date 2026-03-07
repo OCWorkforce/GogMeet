@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../shared/types.js';
-import type { MeetingEvent, CalendarPermission } from '../shared/types.js';
+import type { CalendarPermission, CalendarResult } from '../shared/types.js';
 
 const api = {
   calendar: {
-    getEvents: (): Promise<MeetingEvent[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_GET_EVENTS),
+    getEvents: (): Promise<CalendarResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_GET_EVENTS) as Promise<CalendarResult>,
 
     requestPermission: (): Promise<CalendarPermission> =>
       ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_REQUEST_PERMISSION),

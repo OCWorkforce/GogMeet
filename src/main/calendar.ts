@@ -156,11 +156,6 @@ export async function getCalendarEventsResult(): Promise<CalendarResult> {
   }
 }
 
-/** @deprecated Use getCalendarEventsResult() for structured error handling */
-export async function getCalendarEvents(): Promise<MeetingEvent[]> {
-  const result = await getCalendarEventsResult();
-  return 'events' in result ? result.events : [];
-}
 
 /** Run an inline AppleScript for permission checks (fast, no event queries) */
 async function runAppleScript(script: string): Promise<string> {
