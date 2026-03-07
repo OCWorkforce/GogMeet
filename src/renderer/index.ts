@@ -51,14 +51,17 @@ function formatLastUpdated(ts: number): string {
 }
 
 function renderFooter(): string {
-  const label = lastUpdatedAt === null
-    ? 'Loading...'
-    : formatLastUpdated(lastUpdatedAt);
+  const isLoading = lastUpdatedAt === null;
+  const label = isLoading ? 'Loading…' : formatLastUpdated(lastUpdatedAt!);
+  const icon = isLoading ? '' : '<span class="footer-refresh-icon" aria-hidden="true">↻</span>';
   return `
-    <div class="footer">
+    <footer class="footer">
       <span class="footer-version">v${version}</span>
-      <button class="footer-refresh" data-action="refresh">${label}</button>
-    </div>
+      <span class="footer-sep" aria-hidden="true"></span>
+      <button class="footer-refresh${isLoading ? ' footer-refresh--loading' : ''}" data-action="refresh" aria-label="Refresh meetings">
+        ${icon}<span class="footer-refresh-label">${label}</span>
+      </button>
+    </footer>
   `;
 }
 
@@ -167,6 +170,14 @@ function render() {
 
   app.innerHTML = `<div class="body">${renderBody(state)}</div>` + renderFooter();
 
+  // Measure actual rendered height and resize the Electron BrowserWindow
+  const FOOTER_H = 32;
+  const MIN_H = 220;
+  const MAX_H = 480;
+  const bodyEl = app.querySelector<HTMLElement>('.body');
+  const bodyH = bodyEl ? bodyEl.scrollHeight : 0;
+  const targetH = Math.min(MAX_H, Math.max(MIN_H, bodyH + FOOTER_H));
+  window.api.window.setHeight(targetH);
 }
 
 function setupDelegatedEvents(): void {

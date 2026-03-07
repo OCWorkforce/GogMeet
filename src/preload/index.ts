@@ -20,6 +20,9 @@ const api = {
 
     restore: (): void =>
       ipcRenderer.send(IPC_CHANNELS.WINDOW_RESTORE),
+
+    setHeight: (height: number): void =>
+      ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_HEIGHT, height),
   },
 
   app: {

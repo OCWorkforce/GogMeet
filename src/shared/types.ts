@@ -5,6 +5,7 @@ export const IPC_CHANNELS = {
   CALENDAR_PERMISSION_STATUS: 'calendar:permission-status',
   WINDOW_MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
   WINDOW_RESTORE: 'window:restore',
+  WINDOW_SET_HEIGHT: 'window:set-height',
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_GET_VERSION: 'app:get-version',
 } as const;

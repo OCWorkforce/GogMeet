@@ -56,6 +56,12 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     win.focus();
   });
 
+  ipcMain.on(IPC_CHANNELS.WINDOW_SET_HEIGHT, (_event, height: number) => {
+    if (typeof height === 'number' && height > 0) {
+      win.setSize(360, Math.round(height), true);
+    }
+  });
+
   // App utilities
   ipcMain.handle(IPC_CHANNELS.APP_OPEN_EXTERNAL, async (event, url: string) => {
     if (!validateSender(event)) return;
