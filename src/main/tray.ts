@@ -40,16 +40,6 @@ export function setupTray(win: BrowserWindow): void {
   tray = new Tray(icon);
   tray.setToolTip('Google Meet');
 
-  // Configure native About panel
-  app.setAboutPanelOptions({
-    applicationName: 'Google Meet',
-    applicationVersion: app.getVersion(),
-    version: app.getVersion(),
-    credits: 'Developed by CCWorkforce Engineers',
-    copyright: `© ${new Date().getFullYear()} CCWorkforce`,
-    iconPath,
-  });
-
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Open Google Meet',

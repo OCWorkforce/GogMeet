@@ -11,6 +11,7 @@ files:
   - src/assets/**/*
   - src/main/gimeet-events.swift
   - package.json
+  - assets/**/*
   - '!**/*.map'
   - '!**/node_modules'
 
