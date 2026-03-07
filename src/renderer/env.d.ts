@@ -9,8 +9,6 @@ declare global {
         getPermissionStatus(): Promise<CalendarPermission>;
       };
       window: {
-        minimizeToTray(): void;
-        restore(): void;
         setHeight(height: number): void;
       };
       app: {

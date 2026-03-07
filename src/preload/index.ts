@@ -15,11 +15,6 @@ const api = {
   },
 
   window: {
-    minimizeToTray: (): void =>
-      ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE_TO_TRAY),
-
-    restore: (): void =>
-      ipcRenderer.send(IPC_CHANNELS.WINDOW_RESTORE),
 
     setHeight: (height: number): void =>
       ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_HEIGHT, height),

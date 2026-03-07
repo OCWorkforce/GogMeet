@@ -63,49 +63,6 @@ html, body {
   transition: opacity 150ms ease, transform 150ms ease, height 200ms ease;
 }
 
-#app.hiding {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-
-.btn-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-secondary);
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.1s, color 0.1s;
-  font-size: 15px;
-}
-
-.btn-icon:hover {
-  background: var(--border);
-  color: var(--text-primary);
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 6px;
-  -webkit-app-region: no-drag;
-  transition: background 0.1s, color 0.1s;
-}
-
-.btn-text:hover {
-  background: var(--border);
-  color: var(--text-primary);
-}
 
 /* ---- Body ---- */
 .body {

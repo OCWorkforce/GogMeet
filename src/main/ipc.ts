@@ -45,17 +45,6 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     return getCalendarPermissionStatus();
   });
 
-  // Window management
-  ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE_TO_TRAY, () => {
-    win.hide();
-    app.dock?.hide();
-  });
-
-  ipcMain.on(IPC_CHANNELS.WINDOW_RESTORE, () => {
-    win.show();
-    win.focus();
-  });
-
   ipcMain.on(IPC_CHANNELS.WINDOW_SET_HEIGHT, (_event, height: number) => {
     if (typeof height === 'number' && height > 0) {
       win.setSize(360, Math.round(height), true);

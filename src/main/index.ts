@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, nativeImage, screen } from "electron";
+import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setupTray } from "./tray.js";
@@ -97,5 +97,3 @@ app.on("before-quit", () => {
     mainWindow.destroy();
   }
 });
-
-export { mainWindow, __dirname, shell, nativeImage, screen };

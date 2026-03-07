@@ -64,11 +64,21 @@ fi
 
 success "DMG build complete."
 
-# ── 4. Sign the DMG (ad-hoc) ─────────────────────────────────────────────────
-# Without a DMG signature, macOS marks it as having "no usable signature" and
-# quarantine removal may not help.  Ad-hoc sign the DMG so the quarantine flag
-# is the only remaining gate (easily removed with xattr).
+# ── 4. Re-sign .app (ad-hoc deep) + sign the DMG ────────────────────────────
+# electron-builder signs with --runtime (hardened runtime) which causes macOS
+# to enforce Team ID consistency between the process and loaded frameworks.
+# With ad-hoc signing (TeamIdentifier=not set) this triggers a dyld error:
+#   "mapping process and mapped file (non-platform) have different Team IDs"
+# Fix: deep-re-sign the whole .app *without* --runtime so all components are
+# consistently plain-adhoc, then sign the DMG for quarantine compatibility.
 if [[ "$SIGN_MODE" == "adhoc" ]]; then
+  APP_BUNDLE=$(find dist/mac-arm64 -maxdepth 1 -name '*.app' | head -1)
+  if [[ -n "$APP_BUNDLE" ]]; then
+    info "Re-signing app bundle (deep, ad-hoc, no hardened runtime): ${APP_BUNDLE}…"
+    codesign --force --deep --sign - "$APP_BUNDLE"
+    success "App bundle re-signed."
+  fi
+
   DMG_FILE=$(find dist -maxdepth 1 -name '*.dmg' | head -1)
   if [[ -n "$DMG_FILE" ]]; then
     info "Ad-hoc signing DMG: ${DMG_FILE}…"

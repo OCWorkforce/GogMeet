@@ -40,8 +40,6 @@ function formatRelativeTime(isoDate: string): { label: string; cls: string } {
   return { label: `${hours}:${minutes}`, cls: '' };
 }
 
-
-
 function formatLastUpdated(ts: number): string {
   const diffMs = Date.now() - ts;
   const diffMin = Math.floor(diffMs / 60000);

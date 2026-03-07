@@ -3,14 +3,10 @@ export const IPC_CHANNELS = {
   CALENDAR_GET_EVENTS: 'calendar:get-events',
   CALENDAR_REQUEST_PERMISSION: 'calendar:request-permission',
   CALENDAR_PERMISSION_STATUS: 'calendar:permission-status',
-  WINDOW_MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
-  WINDOW_RESTORE: 'window:restore',
   WINDOW_SET_HEIGHT: 'window:set-height',
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_GET_VERSION: 'app:get-version',
 } as const;
-
-export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 
 /** Meeting event data model */
 export interface MeetingEvent {
@@ -31,5 +27,4 @@ export type CalendarResult = { events: MeetingEvent[] } | { error: string };
 export type CalendarPermission =
   | 'granted'
   | 'denied'
-  | 'not-determined'
-  | 'restricted';
+  | 'not-determined';
