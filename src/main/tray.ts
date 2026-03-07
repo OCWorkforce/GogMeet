@@ -7,7 +7,6 @@ import {
   screen,
   type Rectangle,
 } from 'electron';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,21 +15,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let tray: Tray | null = null;
 
 export function setupTray(win: BrowserWindow): void {
-  // In dev: __dirname is lib/main/, assets are at ../../src/assets/
-  // In packaged: assets are in Resources/app/src/assets/
-  const assetsDir = app.isPackaged
-    ? path.join(process.resourcesPath, 'app', 'src', 'assets')
-    : path.join(__dirname, '..', '..', 'src', 'assets');
+  // In dev:      __dirname = lib/main/   → ../../src/assets
+  // In packaged: __dirname = app.asar/lib/main/ → ../../src/assets (inside asar)
+  //
+  // IMPORTANT: use nativeImage.createFromPath() — it understands asar virtual paths.
+  // fs.readFileSync() does NOT resolve asar paths in the main process and will throw,
+  // which silently prevents the tray from ever being created.
+  const assetsDir = path.join(__dirname, '..', '..', 'src', 'assets');
 
   const iconPath = path.join(assetsDir, 'tray-iconTemplate.png');
   const icon2xPath = path.join(assetsDir, 'tray-iconTemplate@2x.png');
 
-  // Build a nativeImage with both 1x and 2x representations so macOS picks
-  // the correct resolution on Retina displays. setTemplateImage(true) makes
-  // macOS automatically render it black on light menu bars and white on dark.
+  // nativeImage.createFromPath handles asar virtual paths correctly in both
+  // dev and packaged modes. addRepresentation with a buffer + fs.readFileSync
+  // breaks in packaged builds because main-process fs cannot read inside .asar.
+  const icon1x = nativeImage.createFromPath(iconPath);
+  const icon2x = nativeImage.createFromPath(icon2xPath);
+
   const icon = nativeImage.createEmpty();
-  icon.addRepresentation({ scaleFactor: 1.0, buffer: fs.readFileSync(iconPath) });
-  icon.addRepresentation({ scaleFactor: 2.0, buffer: fs.readFileSync(icon2xPath) });
+  icon.addRepresentation({ scaleFactor: 1.0, buffer: icon1x.toPNG() });
+  icon.addRepresentation({ scaleFactor: 2.0, buffer: icon2x.toPNG() });
   icon.setTemplateImage(true);
 
   tray = new Tray(icon);
