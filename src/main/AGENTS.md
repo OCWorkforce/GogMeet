@@ -35,10 +35,7 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 - **Helper**: `googlemeet-events.swift` compiled to `/tmp/googlemeet/googlemeet-events` on first call
 - **Compile time**: <1s (`swiftc` invoked at runtime, cached)
 - **Query time**: ~0.7s (EventKit indexed queries, no network waits)
-- **Output format**: Tab-delimited `id||title||startISO||endISO||url||calendar||allDay||userEmail` (8 fields)
-- **Date range**: Today midnight → +2 days
-- **Permission checks**: Still use fast AppleScript (no event queries)
-
+- **Output format**: Tab-delimited `id\ttitle\tstartISO\tendISO\turl\tcalendar\tallDay\temail` (8 fields)
 ## IPC HANDLERS
 
 | Channel                       | Handler                         |
@@ -75,13 +72,13 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 
 | Symbol                    | Location               | Role                                          |
 | ------------------------- | ---------------------- | --------------------------------------------- |
-| `startScheduler`          | `scheduler.ts:344`     | Start poll loop + initial poll                |
-| `stopScheduler`           | `scheduler.ts:357`     | Clear all timers on quit                      |
-| `buildMeetUrl`            | `utils/meet-url.ts:10` | Append `?authuser=email` to Meet URL          |
-| `scheduleEvents`          | `scheduler.ts:102`     | Set/clear per-event `setTimeout` timers       |
-| `poll`                    | `scheduler.ts:312`     | Calendar poll with error handling             |
+| `startScheduler`          | `scheduler.ts:330`     | Start poll loop + initial poll                |
+| `stopScheduler`           | `scheduler.ts:342`     | Clear all timers on quit                      |
+| `buildMeetUrl`            | `utils/meet-url.ts:7`  | Append `?authuser=email` to Meet URL         |
+| `scheduleEvents`          | `scheduler.ts:87`      | Set/clear per-event `setTimeout` timers       |
+| `poll`                    | `scheduler.ts:297`     | Calendar poll with error handling             |
 | `getCalendarEventsResult` | `calendar.ts:144`      | Swift EventKit fetch (returns CalendarResult) |
-| `parseEvents`             | `calendar.ts:91`       | Parse 8-field pipe-delimited Swift output     |
+| `parseEvents`             | `calendar.ts:91`       | Parse 8-field tab-delimited Swift output      |
 | `setupTray`               | `tray.ts:29`           | System tray init                              |
 | `registerIpcHandlers`     | `ipc.ts:44`            | IPC registration (validateSender pattern)     |
-| `createWindow`            | `index.ts:24`          | BrowserWindow factory                         |
+| `createWindow`            | `index.ts:38`          | BrowserWindow factory                         |
