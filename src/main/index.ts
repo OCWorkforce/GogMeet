@@ -27,9 +27,7 @@ process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) =>
 app.setAboutPanelOptions({
   applicationName: 'Google Meet',
   applicationVersion: app.getVersion(),
-  version: app.getVersion(),
   credits: 'Developed by CCWorkforce Engineers',
-  copyright: `© ${new Date().getFullYear()} CCWorkforce`,
   iconPath: path.join(__dirname, '..', '..', 'assets', 'google-meet-icon.png'),
 });
 
