@@ -26,6 +26,28 @@ function formatMeetingTime(isoDate: string): string {
 
 let tray: Tray | null = null;
 
+let aboutOpen = false;
+
+function showAbout(mainWindow: BrowserWindow): void {
+  if (aboutOpen) {
+    // Focus the existing about window
+    const existing = BrowserWindow.getAllWindows().find(w => w !== mainWindow);
+    existing?.focus();
+    return;
+  }
+  aboutOpen = true;
+  app.showAboutPanel();
+  setImmediate(() => {
+    const aboutWindow = BrowserWindow.getAllWindows().find(w => w !== mainWindow);
+    if (aboutWindow) {
+      aboutWindow.setAlwaysOnTop(true, 'floating');
+      aboutWindow.once('closed', () => { aboutOpen = false; });
+    } else {
+      aboutOpen = false;
+    }
+  });
+}
+
 export function setupTray(mainWindow: BrowserWindow): void {
   // In dev:      __dirname = lib/main/   → ../../src/assets
   // In packaged: __dirname = app.asar/lib/main/ → ../../src/assets (inside asar)
@@ -85,13 +107,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
       return [
         { label: "No upcoming meetings", enabled: false },
         { type: "separator" },
-        { label: "About", click: () => {
-          app.showAboutPanel();
-          setImmediate(() => {
-            const aboutWindow = BrowserWindow.getAllWindows().find(w => w !== mainWindow);
-            aboutWindow?.setAlwaysOnTop(true, 'floating');
-          });
-        } },
+        { label: "About", click: () => showAbout(mainWindow) },
         { label: "Quit", accelerator: "Cmd+Q", click: () => app.quit() },
       ];
     }
@@ -133,13 +149,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
     }
 
     items.push({ type: "separator" });
-    items.push({ label: "About", click: () => {
-      app.showAboutPanel();
-      setImmediate(() => {
-        const aboutWindow = BrowserWindow.getAllWindows().find(w => w !== mainWindow);
-        aboutWindow?.setAlwaysOnTop(true, 'floating');
-      });
-    } });
+    items.push({ label: "About", click: () => showAbout(mainWindow) });
     items.push({
       label: "Quit",
       accelerator: "Cmd+Q",
@@ -157,13 +167,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
       template = [
         { label: "Calendar unavailable", enabled: false },
         { type: "separator" },
-        { label: "About", click: () => {
-        app.showAboutPanel();
-        setImmediate(() => {
-          const aboutWindow = BrowserWindow.getAllWindows().find(w => w !== mainWindow);
-          aboutWindow?.setAlwaysOnTop(true, 'floating');
-        });
-      } },
+        { label: "About", click: () => showAbout(mainWindow) },
         { label: "Quit", accelerator: "Cmd+Q", click: () => app.quit() },
       ];
     } else {
