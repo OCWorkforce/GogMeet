@@ -13,8 +13,7 @@ import {
 } from "./calendar.js";
 import { isAllowedMeetUrl } from "./utils/url-validation.js";
 
-// Re-export for backward compatibility with tests
-export { isAllowedMeetUrl };
+/** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 /** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
