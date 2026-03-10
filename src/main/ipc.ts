@@ -11,7 +11,10 @@ import {
   requestCalendarPermission,
   getCalendarPermissionStatus,
 } from "./calendar.js";
+import { isAllowedMeetUrl } from "./utils/url-validation.js";
 
+// Re-export for backward compatibility with tests
+export { isAllowedMeetUrl };
 /** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
@@ -35,17 +38,7 @@ export function validateSender(event: IpcMainInvokeEvent): boolean {
   return false;
 }
 
-/** Allowlisted Meet URL prefixes */
-const MEET_URL_ALLOWLIST = [
-  "https://meet.google.com/",
-  "https://calendar.google.com/",
-  "https://accounts.google.com/",
-];
-
-export function isAllowedMeetUrl(url: string): boolean {
-  return MEET_URL_ALLOWLIST.some((prefix) => url.startsWith(prefix));
-}
-
+/** Acceptable height bounds for the popover window */
 export function registerIpcHandlers(win: BrowserWindow): void {
   // Calendar
   ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (event) => {
