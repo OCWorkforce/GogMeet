@@ -36,6 +36,11 @@ export type IpcChannelMap = {
   };
 };
 
+/** Type utilities for type-safe IPC */
+export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
+export type IpcRequest<K extends IpcChannel> = IpcChannelMap[K]['request'];
+export type IpcResponse<K extends IpcChannel> = IpcChannelMap[K]['response'];
+
 /** Meeting event data model */
 export interface MeetingEvent {
   id: string;

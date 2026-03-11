@@ -5,7 +5,7 @@ import {
   BrowserWindow,
   type IpcMainInvokeEvent,
 } from "electron";
-import { IPC_CHANNELS } from "../shared/types.js";
+import { IPC_CHANNELS, type IpcChannelMap, type IpcRequest, type IpcResponse } from "../shared/types.js";
 import {
   getCalendarEventsResult,
   requestCalendarPermission,
@@ -13,7 +13,6 @@ import {
 } from "./calendar.js";
 import { isAllowedMeetUrl } from "./utils/url-validation.js";
 
-/** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 /** Accepted URL origins for IPC senders (renderer served from file:// or localhost in dev) */
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
@@ -37,10 +36,23 @@ export function validateSender(event: IpcMainInvokeEvent): boolean {
   return false;
 }
 
-/** Acceptable height bounds for the popover window */
+/**
+ * Type-safe IPC handler wrapper.
+ * Ensures handler return type matches IpcChannelMap response type at compile time.
+ */
+function typedHandle<K extends keyof IpcChannelMap>(
+  channel: K,
+  handler: (
+    event: IpcMainInvokeEvent,
+    request: IpcChannelMap[K]['request']
+  ) => Promise<IpcChannelMap[K]['response']> | IpcChannelMap[K]['response']
+): void {
+  ipcMain.handle(channel, handler as Parameters<typeof ipcMain.handle>[1]);
+}
+
 export function registerIpcHandlers(win: BrowserWindow): void {
   // Calendar
-  ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (event) => {
+  typedHandle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (event): Promise<IpcResponse<typeof IPC_CHANNELS.CALENDAR_GET_EVENTS>> => {
     if (!validateSender(event)) return { error: "unauthorized" };
     try {
       return await getCalendarEventsResult();
@@ -50,7 +62,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.CALENDAR_REQUEST_PERMISSION, async (event) => {
+  typedHandle(IPC_CHANNELS.CALENDAR_REQUEST_PERMISSION, async (event): Promise<IpcResponse<typeof IPC_CHANNELS.CALENDAR_REQUEST_PERMISSION>> => {
     if (!validateSender(event)) return "denied";
     try {
       return await requestCalendarPermission();
@@ -60,7 +72,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.CALENDAR_PERMISSION_STATUS, async (event) => {
+  typedHandle(IPC_CHANNELS.CALENDAR_PERMISSION_STATUS, async (event): Promise<IpcResponse<typeof IPC_CHANNELS.CALENDAR_PERMISSION_STATUS>> => {
     if (!validateSender(event)) return "denied";
     try {
       return await getCalendarPermissionStatus();
@@ -69,48 +81,57 @@ export function registerIpcHandlers(win: BrowserWindow): void {
       return "denied";
     }
   });
-
-  ipcMain.on(IPC_CHANNELS.WINDOW_SET_HEIGHT, (event, height: number) => {
-    // Validate sender (inline check for ipcMain.on which uses IpcMainEvent)
-    const senderUrl = event.senderFrame?.url ?? "";
-    const isAllowed =
-      senderUrl.startsWith("file://") ||
-      [...ALLOWED_ORIGINS].some((o) => senderUrl.startsWith(o));
-    if (!isAllowed) {
-      console.warn("[ipc] WINDOW_SET_HEIGHT from unauthorized sender:", senderUrl);
-      return;
-    }
-
-    try {
-      if (typeof height === "number" && height > 0) {
-        // Clamp height to acceptable bounds
-        const clampedHeight = Math.max(MIN_WINDOW_HEIGHT, Math.min(MAX_WINDOW_HEIGHT, Math.round(height)));
-        win.setSize(360, clampedHeight, true);
+  // Window (uses ipcMain.on for fire-and-forget)
+  ipcMain.on(
+    IPC_CHANNELS.WINDOW_SET_HEIGHT,
+    (event, height: IpcRequest<typeof IPC_CHANNELS.WINDOW_SET_HEIGHT>) => {
+      // Validate sender (inline check for ipcMain.on which uses IpcMainEvent)
+      const senderUrl = event.senderFrame?.url ?? "";
+      const isAllowed =
+        senderUrl.startsWith("file://") ||
+        [...ALLOWED_ORIGINS].some((o) => senderUrl.startsWith(o));
+      if (!isAllowed) {
+        console.warn("[ipc] WINDOW_SET_HEIGHT from unauthorized sender:", senderUrl);
+        return;
       }
-    } catch (err) {
-      console.error("[ipc] WINDOW_SET_HEIGHT error:", err);
+
+      try {
+        if (typeof height === "number" && height > 0) {
+          // Clamp height to acceptable bounds
+        const clampedHeight = Math.max(MIN_WINDOW_HEIGHT, Math.min(MAX_WINDOW_HEIGHT, Math.round(height)));
+          win.setSize(360, clampedHeight, true);
+        }
+      } catch (err) {
+        console.error("[ipc] WINDOW_SET_HEIGHT error:", err);
+      }
     }
-  });
+  );
 
   // App utilities
-  ipcMain.handle(IPC_CHANNELS.APP_OPEN_EXTERNAL, async (event, url: string) => {
-    if (!validateSender(event)) return;
-    try {
-      if (typeof url === "string" && isAllowedMeetUrl(url)) {
-        await shell.openExternal(url);
+  typedHandle(
+    IPC_CHANNELS.APP_OPEN_EXTERNAL,
+    async (event, url: IpcRequest<typeof IPC_CHANNELS.APP_OPEN_EXTERNAL>): Promise<IpcResponse<typeof IPC_CHANNELS.APP_OPEN_EXTERNAL>> => {
+      if (!validateSender(event)) return;
+      try {
+        if (typeof url === "string" && isAllowedMeetUrl(url)) {
+          await shell.openExternal(url);
+        }
+      } catch (err) {
+        console.error("[ipc] APP_OPEN_EXTERNAL error:", err);
       }
-    } catch (err) {
-      console.error("[ipc] APP_OPEN_EXTERNAL error:", err);
     }
-  });
+  );
 
-  ipcMain.handle(IPC_CHANNELS.APP_GET_VERSION, (event) => {
-    if (!validateSender(event)) return "";
-    try {
-      return app.getVersion();
-    } catch (err) {
-      console.error("[ipc] APP_GET_VERSION error:", err);
-      return "";
+  typedHandle(
+    IPC_CHANNELS.APP_GET_VERSION,
+    (event): IpcResponse<typeof IPC_CHANNELS.APP_GET_VERSION> => {
+      if (!validateSender(event)) return "";
+      try {
+        return app.getVersion();
+      } catch (err) {
+        console.error("[ipc] APP_GET_VERSION error:", err);
+        return "";
+      }
     }
-  });
+  );
 }
