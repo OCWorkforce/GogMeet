@@ -59,8 +59,8 @@ export function createSettingsWindow(): BrowserWindow {
   // Clean up reference on close
   win.on("closed", () => {
     settingsWindow = null;
-    // Hide from Dock if main window is not visible
-    // (Dock will auto-hide when no windows are open due to LSUIElement)
+    // Hide from Dock when settings window closes (tray-only app)
+    app.dock?.hide();
   });
 
   settingsWindow = win;
