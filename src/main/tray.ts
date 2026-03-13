@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { getCalendarEventsResult } from "./calendar.js";
 import { buildMeetUrl } from "./utils/meet-url.js";
 import { createSettingsWindow } from "./settings-window.js";
+import { getSettings } from "./settings.js";
 import type { MeetingEvent } from "../shared/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -96,6 +97,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
    */
   function buildMeetingMenuTemplate(
     events: MeetingEvent[],
+    showTomorrowMeetings: boolean,
   ): MenuItemConstructorOptions[] {
     const now = new Date();
     const todayStart = new Date(now);
@@ -151,7 +153,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
       }
     }
 
-    if (tomorrowEvents.length > 0) {
+    if (showTomorrowMeetings && tomorrowEvents.length > 0) {
       if (items.length > 0) items.push({ type: "separator" });
       items.push({ label: "Tomorrow", enabled: false });
       for (const event of tomorrowEvents) {
@@ -197,7 +199,7 @@ export function setupTray(mainWindow: BrowserWindow): void {
         { label: "Quit", accelerator: "Cmd+Q", click: () => app.quit() },
       ];
     } else {
-      template = buildMeetingMenuTemplate(result.events);
+      template = buildMeetingMenuTemplate(result.events, getSettings().showTomorrowMeetings);
     }
     tray!.popUpContextMenu(Menu.buildFromTemplate(template));
   });
