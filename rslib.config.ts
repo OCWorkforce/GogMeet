@@ -15,12 +15,24 @@ export default defineConfig({
         filename: {
           js: '[name].cjs',
         },
+        // === PRODUCTION OPTIMIZATIONS ===
+        minify: true,
+        sourceMap: false,
       },
       tools: {
         bundlerChain(chain) {
           chain.target('electron-main');
         },
         rspack(config) {
+          // === OPTIMIZATION FLAGS ===
+          config.optimization = {
+            minimize: true,
+            usedExports: true,
+            sideEffects: true,
+            concatenateModules: true,
+            innerGraph: true,
+          };
+
           // Append electron external AFTER ElectronTargetPlugin has set its externals
           const existing = config.externals ?? [];
           const arr = Array.isArray(existing) ? existing : [existing];

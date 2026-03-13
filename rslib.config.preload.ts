@@ -13,13 +13,25 @@ export default defineConfig({
         distPath: { root: './lib/preload' },
         filename: { js: 'index.cjs' },
         target: 'node',
+        // === PRODUCTION OPTIMIZATIONS ===
+        minify: true,
+        sourceMap: false,
       },
       tools: {
         bundlerChain(chain) {
           chain.target('electron-preload');
         },
         rspack(config) {
-          // electron must never be bundled in preload
+          // === OPTIMIZATION FLAGS ===
+          config.optimization = {
+            minimize: true,
+            usedExports: true,
+            sideEffects: true,
+            concatenateModules: true,
+            innerGraph: true,
+          };
+
+          // CRITICAL: electron must never be bundled in preload
           const existing = config.externals ?? [];
           const arr = Array.isArray(existing) ? existing : [existing];
           arr.push(function(ctx, callback) {

@@ -1,6 +1,10 @@
 appId: com.ocworkforce.gogmeet
 productName: GogMeet
 
+# === COMPRESSION ===
+# Use maximum compression for distribution builds
+compression: maximum
+
 directories:
   output: dist
   buildResources: build
@@ -17,6 +21,11 @@ files:
 asarUnpack:
   - "src/main/googlemeet-events.swift"
 
+# === ELECTRON LOCALES ===
+# Only keep English (saves ~5-10MB)
+electronLanguages:
+  - en
+
 mac:
   target:
     - target: dmg
@@ -32,6 +41,15 @@ mac:
     NSCalendarsFullAccessUsageDescription: GogMeet needs calendar access to find your Google Meet events.
     NSAppleEventsUsageDescription: GogMeet uses AppleScript to read your calendar events.
   notarize: false
+
+# === DMG-SPECIFIC ===
+dmg:
+  # Use LZFSE compression (best for macOS 10.11+/arm64)
+  format: ULFO
+  # Shrink to minimum size
+  shrink: true
+  # Don't sign DMG (not required, causes notarization issues)
+  sign: false
 
 afterSign: build/notarize.js
 
