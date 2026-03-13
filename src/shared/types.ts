@@ -9,6 +9,7 @@ export const IPC_CHANNELS = {
   SETTINGS_GET: "settings:get",
   SETTINGS_SET: "settings:set",
   SETTINGS_CHANGED: "settings:changed",
+  CALENDAR_EVENTS_UPDATED: "calendar:events-updated",
 } as const;
 
 /** IPC Request/Response type map for type-safe IPC */

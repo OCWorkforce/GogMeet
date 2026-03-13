@@ -2,7 +2,9 @@ import { Notification, shell } from "electron";
 import { getSettings } from "./settings.js";
 
 import { getCalendarEventsResult } from "./calendar.js";
+import type { BrowserWindow } from "electron";
 import type { MeetingEvent } from "../shared/types.js";
+import { IPC_CHANNELS } from "../shared/types.js";
 import { updateTrayTitle } from "./tray.js";
 import { buildMeetUrl } from "./utils/meet-url.js";
 /** Get milliseconds before meeting start to open browser, based on settings */
@@ -39,6 +41,12 @@ const inMeetingEndTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Which event currently owns the in-meeting tray title */
 let activeInMeetingEventId: string | null = null;
+
+let win: BrowserWindow | null = null;
+
+export function setSchedulerWindow(w: BrowserWindow): void {
+  win = w;
+}
 
 /** Map of eventId → stored event snapshot for change detection (replaces scheduledStartMs) */
 const scheduledEventData = new Map<
@@ -475,6 +483,10 @@ async function poll(): Promise<void> {
     if ("events" in result) {
       consecutiveErrors = 0;
       scheduleEvents(result.events);
+      // Notify renderer of updated events
+      if (win && !win.isDestroyed()) {
+        win.webContents.send(IPC_CHANNELS.CALENDAR_EVENTS_UPDATED);
+      }
     } else {
       console.error("[scheduler] Calendar error:", result.error);
       consecutiveErrors++;

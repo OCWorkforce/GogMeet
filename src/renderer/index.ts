@@ -280,6 +280,8 @@ async function loadEvents() {
 
 async function init() {
   setupDelegatedEvents();
+  // Listen for calendar updates pushed from main process
+  window.api.calendar.onEventsUpdated(() => void loadEvents());
   version = await window.api.app.getVersion();
 
   // Initial load

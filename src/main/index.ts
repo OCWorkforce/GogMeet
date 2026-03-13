@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setupTray } from "./tray.js";
 import { registerIpcHandlers } from "./ipc.js";
-import { startScheduler, stopScheduler } from "./scheduler.js";
+import { startScheduler, stopScheduler, setSchedulerWindow } from "./scheduler.js";
 import { getPackageInfo } from "./utils/packageInfo.js";
 import { getSettings } from "./settings.js";
 import { syncAutoLaunch } from "./auto-launch.js";
@@ -101,6 +101,7 @@ app.whenReady().then(() => {
   mainWindow = createWindow();
   registerIpcHandlers(mainWindow);
   setupTray(mainWindow);
+  setSchedulerWindow(mainWindow);
   startScheduler();
 
   // Check notification permission on first run
