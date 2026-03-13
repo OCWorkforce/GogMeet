@@ -27,11 +27,22 @@ function render(errorMessage?: string): void {
     <div class="settings-titlebar">
       <span class="settings-title">Settings</span>
     </div>
+    <div class="settings-hero">
+      <div class="settings-hero-icon">🎥</div>
+      <div class="settings-hero-text">
+        <div class="settings-hero-name">GogMeet</div>
+        <div class="settings-hero-desc">Google Meet calendar reminders</div>
+      </div>
+    </div>
     <div class="settings-content">
+      <div class="settings-section-heading">Meeting Preferences</div>
       <div class="setting-row">
-        <label class="setting-label" for="open-before-select">
-          Open browser before meeting
-        </label>
+        <div class="setting-row-inner">
+          <label class="setting-label" for="open-before-select">
+            ⏰ Open browser before meeting
+          </label>
+          <span class="setting-description">Automatically open meeting links before they start</span>
+        </div>
         <div class="setting-control">
           <span class="save-indicator" id="save-indicator"></span>
           <select class="setting-select" id="open-before-select">
@@ -40,6 +51,9 @@ function render(errorMessage?: string): void {
         </div>
       </div>
       ${errorMessage ? `<p class="settings-error">${errorMessage}</p>` : ""}
+    </div>
+    <div class="settings-footer">
+      <span class="settings-footer-text">GogMeet &middot; &copy; ${new Date().getFullYear()}</span>
     </div>
   `;
 
