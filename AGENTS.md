@@ -1,7 +1,7 @@
 # GogMeet — Project Knowledge Base
 
-**Generated:** 2026-03-11
-**Commit:** 03cf128
+**Generated:** 2026-03-13
+**Commit:** a3844df
 **Branch:** develop
 
 ## OVERVIEW
@@ -15,33 +15,39 @@ macOS tray-only Electron app for Google Meet calendar reminders. Fetches events 
 | Language  | TypeScript 5.9 (strict)                   |
 | Build     | Rslib (main/preload) + Rsbuild (renderer) |
 | Package   | Bun                                       |
-| Test      | Vitest 4 (workspace, 1,127 lines tests)   |
+| Test      | Vitest 4 (workspace, 1,418 lines tests)   |
 
 ## STRUCTURE
 
-```
 src/
 ├── main/             # Electron main process (Node.js)
 │   ├── index.ts      # App bootstrap, window, lifecycle
 │   ├── calendar.ts   # Swift EventKit calendar integration
 │   ├── scheduler.ts  # Auto-launch browser 1 min before meetings
 │   ├── tray.ts       # System tray icon + menu
-│   ├── ipc.ts        # IPC handlers (calendar, window, app)
+│   ├── ipc.ts        # IPC handlers (calendar, window, app, settings)
+│   ├── settings.ts   # Persistent app settings (JSON in userData)
+│   ├── settings-window.ts # Settings BrowserWindow singleton
+│   ├── logger.ts     # Structured logging utility
 │   └── googlemeet-events.swift  # Native EventKit helper (compiled at runtime)
 ├── renderer/         # UI (web context, vanilla TS)
 │   ├── index.ts      # Main UI logic, state machine
 │   ├── index.html    # CSP-protected template
+│   ├── settings/     # Settings window (separate entry)
+│   │   ├── index.ts  # Settings form logic
+│   │   └── styles.css # Settings-specific styles
 │   └── styles/       # CSS (dark mode native aesthetic)
 ├── preload/          # Context bridge (sandbox)
 │   └── index.ts      # Exposes window.api to renderer
 ├── shared/           # Types shared across processes
-│   └── types.ts      # IPC_CHANNELS, MeetingEvent, CalendarPermission
+│   ├── types.ts      # IPC_CHANNELS, MeetingEvent, AppSettings
+│   └── utils/        # Cross-process utilities
+│       └── escape-html.ts # XSS protection
 ├── assets/           # Static (tray icons)
 └── tests/            # Vitest tests (main/renderer workspaces)
     ├── setup.main.ts # Electron mock for main process
-    ├── main/         # Scheduler, calendar, IPC tests (906 lines)
-    └── renderer/     # Event delegation, XSS tests (159 lines)
-```
+    ├── main/         # Scheduler, calendar, IPC, settings tests (1,418 lines)
+    └── renderer/     # Event delegation, XSS tests (148 lines)
 
 ## WHERE TO LOOK
 
@@ -52,8 +58,10 @@ src/
 | Expose to renderer    | `src/preload/index.ts`                 | Add to `api` object                                           |
 | Use in UI             | `src/renderer/index.ts`                | Call via `window.api.*`                                       |
 | Calendar logic        | `src/main/calendar.ts`                 | Swift EventKit via compiled binary                            |
-| Auto-launch scheduler | `src/main/scheduler.ts`                | `startScheduler` / `stopScheduler`                            |
+| Auto-launch scheduler | `src/main/scheduler.ts`                | `startScheduler` / `stopScheduler` / `restartScheduler` |
 | Swift EventKit output | `src/main/googlemeet-events.swift`     | Tab-delimited: id\ttitle\tstart\tend\turl\tcal\tallDay\temail |
+| User settings         | `src/main/settings.ts`                 | JSON in userData, clamped to min/max |
+| Settings window       | `src/main/settings-window.ts`          | Singleton BrowserWindow, shows in Dock |
 | UI state              | `src/renderer/index.ts`                | `AppState` type union                                         |
 | Window config         | `src/main/index.ts`                    | `createWindow()`                                              |
 | Tray behavior         | `src/main/tray.ts`                     | Menu, positioning                                             |
@@ -75,9 +83,14 @@ src/
 | `scheduleEvents` | fn | src/main/scheduler.ts:219 | Per-event setTimeout timers |
 | `poll` | fn | src/main/scheduler.ts:463 | Calendar poll with error handling |
 | `buildMeetUrl` | fn | src/main/utils/meet-url.ts:7 | Appends `?authuser=email` |
-| `IPC_CHANNELS` | const | src/shared/types.ts:2 | Channel names |
-| `IpcChannelMap` | type | src/shared/types.ts:12 | Request/response type map |
-| `MeetingEvent` | iface | src/shared/types.ts:45 | Event data model |
+| `loadSettings` | fn | src/main/settings.ts:32 | Load from userData/settings.json |
+| `updateSettings` | fn | src/main/settings.ts:72 | Persist partial settings |
+| `createSettingsWindow` | fn | src/main/settings-window.ts:15 | Singleton settings window |
+| `IPC_CHANNELS` | const | src/shared/types.ts:2 | 8 channel names |
+| `IpcChannelMap` | type | src/shared/types.ts:14 | Request/response type map |
+| `MeetingEvent` | iface | src/shared/types.ts:55 | Event data model |
+| `AppSettings` | iface | src/shared/types.ts:73 | { openBeforeMinutes: number } |
+| `DEFAULT_SETTINGS` | const | src/shared/types.ts:79 | { openBeforeMinutes: 1 } |
 | `AppState` | type | src/renderer/index.ts:4 | UI state union |
 | `api` | const | src/preload/index.ts:5 | Context bridge API |
 
@@ -89,7 +102,8 @@ src/
 - **Type-safe IPC**: Use `typedHandle()` in main, `IpcResponse<T>` in preload
 - **No UI framework**: Vanilla TS with `innerHTML` string templates
 - **macOS only**: Swift EventKit, dock hiding, entitlements — no cross-platform
-- **Tray-only**: `LSUIElement: true` — no Dock icon
+- **Settings persistence**: JSON file in Electron userData directory; configurable open-before timing (1-5 min)
+- **Settings window**: Shows in Dock when open, hides when closed (tray-only otherwise)
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ```
@@ -137,16 +151,18 @@ Dev orchestration: `scripts/dev.ts` spawns 3 processes (2x rslib watch + rsbuild
 - **Auto-open**: Browser opens 1 min before each non-all-day meeting; `?authuser=email` from event attendee data
 - **Scheduler polling**: Polls every 2 min (independent of renderer's 5-min UI refresh)
 - **Window hide on blur**: Popover behavior — hides when focus lost (dev mode exempt)
-- **Tests exist**: 1,127 lines covering scheduler, calendar, IPC, event delegation, and XSS protection
-- **No CI**: No GitHub workflows or other CI configured
+- **Tests exist**: 1,566 lines across 10 test files covering scheduler, calendar, IPC, settings, tray, event delegation, and XSS protection
+- **No CI**: No GitHub workflows configured
 
 ## TESTS
 
-| Project  | Env   | Location                   | Focus                              |
-| -------- | ----- | -------------------------- | ---------------------------------- |
-| main     | node  | `tests/main/*.test.ts`     | Scheduler, calendar, IPC, security |
-| renderer | jsdom | `tests/renderer/*.test.ts` | Event delegation, XSS protection   |
+| Project  | Lines | Env   | Focus                              |
+| -------- | ----- | ----- | ---------------------------------- |
+| main     | 1,418 | node  | Scheduler, calendar, IPC, settings |
+| renderer | 148   | jsdom | Event delegation, XSS protection   |
 
-**Setup**: `tests/setup.main.ts` mocks full Electron API (app, BrowserWindow, ipcMain, Tray, etc.)
+**Groups**: scheduler.test.ts uses A-E labeled groups (deletion, changes, race conditions, countdowns, errors)
 
-**Test Commands**: `bun run test` (run once) | `bun run test:watch` (watch mode)
+**Setup**: `tests/setup.main.ts` mocks full Electron API
+
+**Commands**: `bun run test` | `bun run test:watch`
