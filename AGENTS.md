@@ -12,7 +12,7 @@ macOS tray-only Electron app for Google Meet calendar reminders. Fetches events 
 | --------- | ----------------------------------------- |
 | Runtime   | Bun 1.3.10+ / Node.js 24.14.0+            |
 | Framework | Electron 40                               |
-| Language  | TypeScript 5.9 (strict)                   |
+| Framework | Electron 41                               |
 | Build     | Rslib (main/preload) + Rsbuild (renderer) |
 | Package   | Bun                                       |
 | Test      | Vitest 4 (workspace, 104 tests)           |
