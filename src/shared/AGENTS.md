@@ -62,17 +62,21 @@ export type CalendarPermission = "granted" | "denied" | "not-determined";
 ### AppSettings
 
 ```typescript
-// types.ts:73-75
+// types.ts:73-77
 export interface AppSettings {
   openBeforeMinutes: number;  // 1-5, default 1
+  launchAtLogin: boolean;     // macOS login item toggle
 }
 ```
 
 ### Constants
 
 ```typescript
-// types.ts:79-85
-export const DEFAULT_SETTINGS: AppSettings = { openBeforeMinutes: 1 };
+// types.ts:81-88
+export const DEFAULT_SETTINGS: AppSettings = { 
+  openBeforeMinutes: 1, 
+  launchAtLogin: false 
+};
 export const OPEN_BEFORE_MINUTES_MIN = 1;
 export const OPEN_BEFORE_MINUTES_MAX = 5;
 ```

@@ -12,6 +12,7 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 | `tray.ts`                 | System tray icon, context menu, window positioning                           |
 | `ipc.ts`                  | IPC handlers (calendar, window, app, settings)                               |
 | `settings.ts`             | Persistent app settings (JSON in userData)                                   |
+| `auto-launch.ts`          | macOS login items (launch at login)                                          |
 | `settings-window.ts`      | Settings BrowserWindow singleton (shows in Dock when open)                   |
 | `logger.ts`               | Structured logging utility                                                   |
 | `googlemeet-events.swift` | Native EventKit helper (compiled to `/tmp/googlemeet/` at runtime)           |
@@ -40,6 +41,7 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 - **Compile time**: <1s (`swiftc` invoked at runtime, cached)
 - **Query time**: ~0.7s (EventKit indexed queries, no network waits)
 - **Output format**: Tab-delimited `id\ttitle\tstartISO\tendISO\turl\tcalendar\tallDay\temail` (8 fields)
+
 ## IPC HANDLERS
 
 | Channel                       | Handler                         |
@@ -76,6 +78,13 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 - **Stale cleanup**: `cleanupStaleEntries()` each poll
 - **URL**: `buildMeetUrl()` appends `?authuser=email`
 
+## AUTO-LAUNCH
+
+- `getAutoLaunchStatus()`: Reads `app.getLoginItemSettings().openAtLogin`
+- `setAutoLaunch(enabled)`: Calls `app.setLoginItemSettings({ openAtLogin, openAsHidden: false })`
+- `syncAutoLaunch(enabled)`: Syncs only if current state differs
+- Called on app ready and when settings change
+
 ## CODE MAP
 
 | Symbol                    | Location               | Role                                          |
@@ -88,12 +97,15 @@ Electron main process (Node.js). Handles app lifecycle, system tray, IPC, then m
 | `getCalendarEventsResult` | `calendar.ts:144`      | Swift EventKit fetch (returns CalendarResult) |
 | `parseEvents`             | `calendar.ts:91`       | Parse 8-field tab-delimited Swift output      |
 | `ensureBinary`            | `calendar.ts`          | Compile/cache Swift binary with hash check    |
-| `registerIpcHandlers`     | `ipc.ts:68`            | IPC registration (validateSender pattern)     |
-| `typedHandle`             | `ipc.ts:58`            | Type-safe IPC wrapper                         |
-| `validateSender`          | `ipc.ts:32`            | Origin validation against `ALLOWED_ORIGINS`   |
+| `registerIpcHandlers`     | `ipc.ts:72`            | IPC registration (validateSender pattern)     |
+| `typedHandle`             | `ipc.ts:62`            | Type-safe IPC wrapper                         |
+| `validateSender`          | `ipc.ts:36`            | Origin validation against `ALLOWED_ORIGINS`   |
 | `setupTray`               | `tray.ts:29`           | System tray init                              |
 | `createWindow`            | `index.ts:38`          | BrowserWindow factory (tray popover)          |
 | `createSettingsWindow`    | `settings-window.ts:15`| Settings BrowserWindow singleton              |
 | `loadSettings`            | `settings.ts:32`       | Load from userData/settings.json              |
 | `updateSettings`          | `settings.ts:72`       | Persist partial settings with clamping        |
+| `getAutoLaunchStatus`     | `auto-launch.ts:7`     | Read macOS login item status                  |
+| `setAutoLaunch`           | `auto-launch.ts:14`    | Set macOS login item                          |
+| `syncAutoLaunch`          | `auto-launch.ts:26`    | Sync if state differs                         |
 | `buildMeetUrl`            | `utils/meet-url.ts:7`  | Append `?authuser=email` to Meet URL          |

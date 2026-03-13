@@ -13,7 +13,8 @@ Electron renderer (web context). Vanilla TypeScript UI with native macOS popover
 | `settings/`       | Settings window UI (separate entry)          |
 | `settings/index.ts` | Settings form logic, save indicator        |
 | `settings/index.html` | Settings HTML template                    |
-| `settings/styles.css` | Settings-specific styles                  |
+| `settings/styles.css` | Settings-specific styles (iOS-style toggles) |
+
 ## STATE MACHINE
 
 ```typescript
@@ -97,3 +98,4 @@ Separate renderer entry at `settings/`. Key differences from main UI:
 - Shows in Dock when open (tray-only app otherwise)
 - Singleton BrowserWindow (focus if already open)
 - Auto-saves on dropdown change with "✓ Saved" indicator
+- iOS-style toggle switch for "Launch at Login" option

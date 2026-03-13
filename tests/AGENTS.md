@@ -10,7 +10,7 @@ tests/
 ├── main/
 │   ├── scheduler.test.ts  # 449 lines — scheduler state machine
 │   ├── calendar.test.ts   # 360 lines — Swift output parsing
-│   ├── settings.test.ts   # 166 lines — file I/O with temp dirs
+│   ├── settings.test.ts   # ~180 lines — file I/O, launchAtLogin
 │   ├── tray.test.ts       # 183 lines — tray module
 │   ├── ipc.test.ts        # 102 lines — security validation
 │   └── meet-url.test.ts   # 140 lines — URL building
@@ -38,7 +38,7 @@ projects: [
 ];
 ```
 
-## MAIN PROCESS TESTS (908 lines)
+## MAIN PROCESS TESTS (104 tests total)
 
 **Mock Pattern**:
 
@@ -54,7 +54,7 @@ vi.mock("../../src/main/tray.js", () => ({ updateTrayTitle: vi.fn() }));
 | ----------------- | ----- | -------------------------------------- |
 | scheduler.test.ts | 449   | State machine, race conditions, timers |
 | calendar.test.ts  | 360   | parseEvents, dedup, date filtering     |
-| settings.test.ts  | 166   | File I/O, clamping, defaults           |
+| settings.test.ts  | ~180  | File I/O, clamping, defaults, launchAtLogin |
 | tray.test.ts      | 183   | Tray title, time formatting            |
 | ipc.test.ts       | 102   | validateSender, isAllowedMeetUrl       |
 | meet-url.test.ts  | 140   | URL building with authuser             |
@@ -109,5 +109,3 @@ bun run test:watch  # Watch mode
 - `ipcMain`: handle, on, off
 - `Tray`: setToolTip, setTitle, on, getBounds, popUpContextMenu
 - `Menu`, `Notification`, `screen`, `nativeImage`
-
-**Total**: 1,418 lines across 8 test files + 78-line setup mock (1,496 total)
