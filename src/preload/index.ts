@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IPC_CHANNELS } from "../shared/types.js";
-import type { IpcRequest, IpcResponse } from "../shared/types.js";
+import type { IpcRequest, IpcResponse, AppSettings } from "../shared/types.js";
 
 const api = {
   calendar: {
@@ -15,6 +15,16 @@ const api = {
     getPermissionStatus: (): Promise<
       IpcResponse<typeof IPC_CHANNELS.CALENDAR_PERMISSION_STATUS>
     > => ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_PERMISSION_STATUS),
+
+    onEventsUpdated: (callback: () => void): (() => void) => {
+      const handler = (): void => {
+        callback();
+      };
+      ipcRenderer.on(IPC_CHANNELS.CALENDAR_EVENTS_UPDATED, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.CALENDAR_EVENTS_UPDATED, handler);
+      };
+    },
   },
 
   window: {

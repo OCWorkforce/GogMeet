@@ -7,6 +7,7 @@ declare global {
         getEvents(): Promise<CalendarResult>;
         requestPermission(): Promise<CalendarPermission>;
         getPermissionStatus(): Promise<CalendarPermission>;
+        onEventsUpdated(callback: () => void): () => void;
       };
       window: {
         setHeight(height: number): void;
@@ -18,6 +19,7 @@ declare global {
       settings: {
         get(): Promise<AppSettings>;
         set(partial: Partial<AppSettings>): Promise<AppSettings>;
+        onChanged(callback: (settings: AppSettings) => void): () => void;
       };
     };
   }

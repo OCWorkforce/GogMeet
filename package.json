@@ -1,6 +1,6 @@
 {
   "name": "gogmeet",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "OCWorkforce Engineers",
   "repository": "https://github.com/OCWorkforce/GogMeet",
   "main": "lib/main/index.cjs",
