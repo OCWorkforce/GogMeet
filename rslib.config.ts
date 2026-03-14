@@ -1,3 +1,4 @@
+import * as rspack from '@rspack/core';
 import { defineConfig } from '@rslib/core';
 
 export default defineConfig({
@@ -31,6 +32,15 @@ export default defineConfig({
             sideEffects: true,
             concatenateModules: true,
             innerGraph: true,
+            minimizer: [
+              new rspack.SwcJsMinimizerRspackPlugin({
+                minimizerOptions: {
+                  compress: {
+                    drop_console: true,
+                  },
+                },
+              }),
+            ],
           };
 
           // Append electron external AFTER ElectronTargetPlugin has set its externals
@@ -48,10 +58,10 @@ export default defineConfig({
           config.resolve = config.resolve ?? {};
           config.resolve.extensionAlias = { '.js': ['.ts', '.js'] };
           return config;
-        },
       },
     },
-  ],
+  },
+],
   source: {
     tsconfigPath: './src/main/tsconfig.json',
   },
