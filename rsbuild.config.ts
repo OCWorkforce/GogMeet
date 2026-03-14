@@ -43,5 +43,6 @@ export default defineConfig({
   },
   performance: {
     chunkSplit: { strategy: 'all-in-one' },
+    removeConsole: ['log', 'info', 'warn', 'error'],
   },
 });
